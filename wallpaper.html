@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Live Wallpaper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#080c16}
+
+  #wp{
+    width:100vw;height:100vh;
+    font-family:'DM Sans',sans-serif;
+    color:#e8e4d9;
+    display:grid;
+    grid-template-columns:1fr 340px;
+    grid-template-rows:1fr auto;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* Aurora */
+  .aurora{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.16;animation:drift 14s ease-in-out infinite}
+  .orb1{width:600px;height:500px;background:#1a3a6e;top:-120px;left:-150px;animation-delay:0s}
+  .orb2{width:500px;height:600px;background:#0e2a50;top:80px;right:-80px;animation-delay:-5s}
+  .orb3{width:400px;height:400px;background:#0a2040;bottom:-80px;left:300px;animation-delay:-10s}
+  .orb4{width:300px;height:300px;background:#122a55;bottom:100px;right:200px;animation-delay:-7s}
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) scale(1)}
+    33%{transform:translate(25px,15px) scale(1.06)}
+    66%{transform:translate(-15px,25px) scale(.97)}
+  }
+
+  canvas#stars{position:absolute;inset:0;z-index:0;pointer-events:none}
+
+  /* ── LEFT PANEL ── */
+  .left{
+    grid-column:1;grid-row:1/3;
+    padding:5vh 52px;
+    z-index:1;
+    display:flex;flex-direction:column;
+    gap:0;
+  }
+
+  /* Clock */
+  #clock{
+    font-family:'DM Serif Display',serif;
+    font-size:min(11vw,110px);
+    line-height:1;color:#fff;
+    letter-spacing:-3px;
+    text-shadow:0 0 80px rgba(80,140,255,.12);
+  }
+  #date-str{
+    font-size:13px;font-weight:300;
+    color:#7a96b8;letter-spacing:2.5px;
+    text-transform:uppercase;margin-top:8px;
+  }
+
+  /* Quote */
+  .quote-wrap{
+    margin-top:clamp(24px,3vh,40px);
+    border-left:2px solid #1e3a58;
+    padding-left:20px;
+    max-width:500px;
+  }
+  #quote-text{
+    font-family:'DM Serif Display',serif;
+    font-style:italic;
+    font-size:clamp(16px,1.5vw,22px);
+    line-height:1.55;color:#b8cee0;
+  }
+  #quote-author{
+    font-size:11px;color:#4a6880;
+    margin-top:8px;letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+
+  /* Day nav */
+  .nav-row{
+    display:flex;gap:10px;align-items:center;
+    margin-top:clamp(24px,3vh,40px);
+  }
+  .day-nav{
+    background:rgba(255,255,255,.05);
+    border:.5px solid rgba(255,255,255,.12);
+    color:#8fa3c0;padding:6px 16px;
+    border-radius:6px;cursor:pointer;
+    font-size:13px;font-family:'DM Sans',sans-serif;
+    transition:all .2s;
+  }
+  .day-nav:hover{background:rgba(255,255,255,.1);color:#fff}
+  #viewing-day{
+    font-size:13px;color:#8fa3c0;
+    min-width:100px;text-align:center;
+  }
+
+  /* ── FOLDERS ── */
+  .folders-row{
+    grid-column:1;grid-row:2;
+    z-index:1;
+    padding:0 52px clamp(16px,2vh,28px);
+  }
+  .folders-label{
+    font-size:10px;letter-spacing:2.5px;
+    text-transform:uppercase;color:#2e4a62;
+    margin-bottom:10px;
+  }
+  .folder-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+  }
+  .folder-card{
+    background:rgba(255,255,255,.04);
+    border:.5px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    padding:12px 14px;
+    cursor:pointer;
+    transition:all .22s;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .folder-card::before{
+    content:'';
+    position:absolute;inset:0;
+    opacity:0;
+    transition:opacity .22s;
+    border-radius:10px;
+  }
+  .folder-card:hover{
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.16);
+    transform:translateY(-2px);
+  }
+  .folder-card:active{transform:translateY(0) scale(.98)}
+
+  .fc-study::before{background:rgba(100,180,255,.06)}
+  .fc-apps::before{background:rgba(120,220,160,.06)}
+  .fc-proj::before{background:rgba(255,180,80,.06)}
+  .fc-zip::before{background:rgba(200,120,255,.06)}
+  .folder-card:hover::before{opacity:1}
+
+  .f-icon{font-size:20px;margin-bottom:6px;display:block}
+  .f-name{
+    font-size:12px;font-weight:500;
+    color:#c0d0e0;letter-spacing:.3px;
+    line-height:1.3;
+  }
+  .f-sub{
+    font-size:10px;color:#3a5570;
+    margin-top:3px;letter-spacing:.5px;
+    flex:1;
+  }
+  .f-delete-btn{
+    align-self:flex-end;
+    background:none;border:none;
+    color:#2e4458;cursor:pointer;font-size:14px;
+    opacity:0;transition:opacity .15s;
+    padding:0;margin-top:6px;
+  }
+  .folder-card:hover .f-delete-btn{
+    opacity:1;color:#ff6b6b;
+  }
+  .f-delete-btn:hover{
+    color:#ff8888;
+  }
+
+  /* folder path input modal */
+  .f-path-wrap{
+    display:none;flex-direction:column;gap:6px;
+    margin-top:8px;
+  }
+  .f-path-wrap.show{display:flex}
+  .f-path-input{
+    width:100%;background:rgba(255,255,255,.07);
+    border:.5px solid rgba(255,255,255,.15);
+    color:#c8d8e8;padding:7px 10px;
+    border-radius:5px;font-size:12px;
+    font-family:'DM Sans',sans-serif;outline:none;
+  }
+  .f-path-input:focus{border-color:rgba(100,160,255,.35)}
+  .f-path-row{display:flex;gap:6px}
+  .f-btn{
+    padding:5px 12px;border-radius:5px;
+    font-size:11px;cursor:pointer;
+    font-family:'DM Sans',sans-serif;border:none;
+  }
+  .f-btn-ok{background:rgba(100,160,255,.2);color:#90c0ff;border:.5px solid rgba(100,160,255,.3)}
+  .f-btn-x{background:rgba(255,255,255,.06);color:#8fa3c0}
+
+  /* ── RIGHT PANEL ── */
+  .right{
+    grid-column:2;grid-row:1/3;
+    padding:clamp(24px,3vh,44px) 28px clamp(16px,2vh,28px);
+    z-index:1;
+    background:rgba(255,255,255,.025);
+    border-left:.5px solid rgba(255,255,255,.06);
+    display:flex;flex-direction:column;
+    gap:14px;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.08) transparent;
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between}
+  .panel-title{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#3a5470;font-weight:500}
+  .add-btn{
+    background:none;border:.5px solid rgba(255,255,255,.14);
+    color:#8fa3c0;width:28px;height:28px;
+    border-radius:6px;cursor:pointer;
+    font-size:20px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .add-btn:hover{background:rgba(100,160,255,.15);color:#90c0ff;border-color:rgba(100,160,255,.3)}
+
+  .todo-list{display:flex;flex-direction:column;gap:7px;flex:1}
+  .todo-item{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:9px 11px;
+    background:rgba(255,255,255,.04);
+    border:.5px solid rgba(255,255,255,.07);
+    border-radius:8px;cursor:pointer;
+    transition:all .18s;
+  }
+  .todo-item:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
+  .todo-item.done{opacity:.4}
+  .todo-item.done .todo-text{text-decoration:line-through;color:#3a5060}
+  .todo-check{
+    width:15px;height:15px;
+    border:1.5px solid #2e4a60;
+    border-radius:4px;flex-shrink:0;margin-top:2px;
+    transition:all .2s;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .todo-item.done .todo-check{background:#133a5a;border-color:#1e5a80}
+  .todo-check::after{content:'✓';font-size:9px;color:#3a80b0;display:none}
+  .todo-item.done .todo-check::after{display:block}
+  .todo-text{font-size:13px;color:#b8cce0;line-height:1.4;flex:1;word-break:break-word}
+  .del-btn{
+    background:none;border:none;
+    color:#2e4458;cursor:pointer;font-size:13px;
+    opacity:0;transition:opacity .15s;padding:0 2px;flex-shrink:0;
+  }
+  .todo-item:hover .del-btn{opacity:1}
+  .empty-state{
+    color:#243646;font-size:13px;
+    padding:24px 0;text-align:center;
+    font-style:italic;
+  }
+
+  .add-form{display:none;flex-direction:column;gap:7px}
+  .add-form.show{display:flex}
+  .add-input{
+    background:rgba(255,255,255,.06);
+    border:.5px solid rgba(255,255,255,.14);
+    color:#e8e4d9;padding:9px 12px;
+    border-radius:6px;font-size:13px;
+    font-family:'DM Sans',sans-serif;outline:none;
+  }
+  .add-input::placeholder{color:#3a5060}
+  .add-input:focus{border-color:rgba(100,160,255,.35);background:rgba(255,255,255,.08)}
+  .form-row{display:flex;gap:7px}
+  .btn-save{
+    padding:7px 16px;border-radius:6px;font-size:12px;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+    background:rgba(100,160,255,.18);color:#90c0ff;
+    border:.5px solid rgba(100,160,255,.28);
+  }
+  .btn-cancel{
+    padding:7px 14px;border-radius:6px;font-size:12px;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+    background:rgba(255,255,255,.05);color:#8fa3c0;border:none;
+  }
+
+  /* Progress */
+  .prog-wrap{margin-top:4px}
+  .prog-bar{height:2px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+  .prog-fill{height:100%;background:linear-gradient(90deg,#123a5a,#2a70a0);border-radius:2px;transition:width .4s ease}
+  .prog-text{font-size:10px;color:#2e4458;margin-top:5px;letter-spacing:.5px}
+
+  /* Quote editor */
+  details.q-edit{border-top:.5px solid rgba(255,255,255,.05);padding-top:10px}
+  details.q-edit summary{
+    font-size:10px;color:#2a3e52;cursor:pointer;
+    letter-spacing:1.5px;text-transform:uppercase;
+    padding:4px 0;list-style:none;
+  }
+  details.q-edit summary:hover{color:#6a8aa0}
+  details.q-edit[open] summary{color:#6a8aa0}
+  .q-ta{
+    width:100%;background:rgba(255,255,255,.05);
+    border:.5px solid rgba(255,255,255,.1);
+    color:#b8cce0;padding:9px 10px;
+    border-radius:6px;font-size:13px;
+    font-family:'DM Serif Display',serif;font-style:italic;
+    resize:vertical;margin-top:8px;outline:none;
+  }
+  .q-ta:focus{border-color:rgba(100,160,255,.28)}
+  .q-aut{
+    width:100%;background:rgba(255,255,255,.05);
+    border:.5px solid rgba(255,255,255,.1);
+    color:#8fa3c0;padding:7px 10px;
+    border-radius:6px;font-size:12px;
+    font-family:'DM Sans',sans-serif;margin-top:6px;outline:none;
+  }
+  .btn-qsave{
+    margin-top:8px;padding:6px 14px;
+    background:rgba(100,160,255,.15);color:#90c0ff;
+    border:.5px solid rgba(100,160,255,.22);
+    border-radius:6px;font-size:11px;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+  }
+
+  /* tip */
+  .tip{
+    font-size:10px;color:#1e3040;
+    text-align:center;line-height:1.7;
+    border-top:.5px solid rgba(255,255,255,.05);
+    padding-top:10px;
+  }
+  .tip strong{color:#2a4256;display:block;margin-bottom:3px}
+
+  /* Image holder */
+  .image-holder-wrap{
+    margin:clamp(20px,3vh,40px) 0;
+    display:flex;justify-content:center;
+  }
+  .image-holder{
+    width:140px;height:140px;
+    border-radius:50%;
+    background:rgba(100,160,255,.08);
+    border:1.5px solid rgba(100,160,255,.25);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    transition:all .3s ease;
+    box-shadow:0 0 40px rgba(100,160,255,.05);
+  }
+  .image-holder:hover{
+    background:rgba(100,160,255,.12);
+    border-color:rgba(100,160,255,.35);
+    box-shadow:0 0 60px rgba(100,160,255,.1);
+    transform:scale(1.05);
+  }
+  .image-holder.dragover{
+    background:rgba(100,160,255,.18);
+    border-color:rgba(100,160,255,.45);
+    box-shadow:0 0 80px rgba(100,160,255,.15);
+  }
+  .image-holder img{
+    width:100%;height:100%;
+    object-fit:cover;
+    border-radius:50%;
+    transition:transform .3s ease;
+  }
+  .image-holder:hover img{
+    transform:scale(1.08);
+  }
+  .image-placeholder{
+    font-size:40px;
+    color:#3a6a9a;
+    text-align:center;
+    display:flex;flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .image-placeholder span{
+    font-size:12px;
+    color:#2a5a7a;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+  }
+  #image-input{
+    display:none;
+  }
+  .image-holder-actions{
+    position:absolute;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,.4);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    border-radius:50%;
+  }
+  .image-holder:hover .image-holder-actions{
+    display:flex;
+  }
+  .img-action-btn{
+    background:rgba(255,255,255,.15);
+    border:.5px solid rgba(255,255,255,.3);
+    color:#e8e4d9;
+    width:32px;height:32px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    transition:all .2s;
+  }
+  .img-action-btn:hover{
+    background:rgba(255,255,255,.25);
+    border-color:rgba(255,255,255,.4);
+  }
+</style>
+</head>
+<body>
+<div id="wp">
+  <div class="aurora">
+    <div class="orb orb1"></div><div class="orb orb2"></div>
+    <div class="orb orb3"></div><div class="orb orb4"></div>
+  </div>
+  <canvas id="stars"></canvas>
+
+  <!-- LEFT: clock + quote + day nav -->
+  <div class="left">
+    <div>
+      <div id="clock">00:00</div>
+      <div id="date-str">—</div>
+    </div>
+
+    <!-- Image holder -->
+    <div class="image-holder-wrap">
+      <div class="image-holder" id="image-holder">
+        <div class="image-placeholder">
+          <div>📷</div>
+          <span>Add image</span>
+        </div>
+        <div class="image-holder-actions">
+          <button class="img-action-btn" id="change-img-btn" title="Change image">✎</button>
+          <button class="img-action-btn" id="remove-img-btn" title="Remove image">✕</button>
+        </div>
+      </div>
+        <input type="file" id="image-input" accept="image/*">
+        <!-- quick pickers for placeholders -->
+        <input type="file" id="image-input-quick" accept="image/*" style="display:none">
+        <input type="file" id="gif-input-quick" accept="image/gif" style="display:none">
+    </div>
+
+    <div class="quote-wrap">
+      <div id="quote-text">The secret of getting ahead is getting started.</div>
+      <div id="quote-author">— Mark Twain</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="day-nav" id="prev-day">← Prev</button>
+      <span id="viewing-day">Monday</span>
+      <button class="day-nav" id="next-day">Next →</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM-LEFT: Folders -->
+  <div class="folders-row">
+<div class="folders-label">Image + GIF selectors</div>
+    <div class="folder-grid">
+
+          <div class="folder-card fc-study" id="fc-0">
+        <span class="f-icon">🖼️</span>
+        <div class="f-name">Wallpaper Image</div>
+        <div class="f-sub" id="fs-0">click to choose image</div>
+        <button class="f-delete-btn" title="Clear" onclick="clearFolder(0)">✕</button>
+      </div>
+
+      <div class="folder-card fc-apps" id="fc-1">
+        <span class="f-icon">🎞️</span>
+        <div class="f-name">Animated GIF</div>
+        <div class="f-sub" id="fs-1">click to choose GIF</div>
+        <button class="f-delete-btn" title="Clear" onclick="clearFolder(1)">✕</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: todos -->
+  <div class="right">
+    <div class="panel-head">
+      <span class="panel-title" id="panel-day">Today's tasks</span>
+      <button class="add-btn" id="add-task-btn" title="Add task">+</button>
+    </div>
+
+    <div class="add-form" id="add-form">
+      <input class="add-input" id="task-input" placeholder="What needs doing?" maxlength="90">
+      <div class="form-row">
+        <button class="btn-save" id="save-task">Add</button>
+        <button class="btn-cancel" id="cancel-task">Cancel</button>
+      </div>
+    </div>
+
+    <div class="todo-list" id="todo-list"></div>
+
+    <div class="prog-wrap">
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-text" id="prog-text">0 / 0 complete</div>
+    </div>
+
+    <details class="q-edit">
+      <summary>✎ Edit motivational quote</summary>
+      <textarea class="q-ta" id="q-ta" rows="3" placeholder="Your quote here…"></textarea>
+      <input class="q-aut" id="q-aut" placeholder="— Author">
+      <button class="btn-qsave" id="q-save-btn">Save quote</button>
+    </details>
+
+    <div class="tip">
+      <strong>💡 Set as live wallpaper</strong>
+      Windows → <em>Lively Wallpaper</em> (free) · drag this file in<br>
+      macOS → <em>Plash</em> app · add local HTML file
+    </div>
+  </div>
+</div>
+
+<script>
+// ── constants ──
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ── state ──
+let viewDay=new Date().getDay();
+let todos=JSON.parse(localStorage.getItem('wp_todos2')||'{}');
+let quotes=JSON.parse(localStorage.getItem('wp_quotes')||'null')||{text:'The secret of getting ahead is getting started.',author:'— Mark Twain'};
+// now holds two quick placeholders: [image, gif]
+let folders=JSON.parse(localStorage.getItem('wp_folders')||'null')||['',''];
+
+// ── clock ──
+function pad(n){return String(n).padStart(2,'0')}
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes());
+  document.getElementById('date-str').textContent=
+    DAYS[n.getDay()].toUpperCase()+' · '+n.getDate()+' '+MONTHS[n.getMonth()]+' '+n.getFullYear();
+}
+
+// ── todos ──
+function renderTodos(){
+  const key=DAYS[viewDay];
+  const list=todos[key]||[];
+  const el=document.getElementById('todo-list');
+  el.innerHTML='';
+  document.getElementById('viewing-day').textContent=key;
+  const td=new Date().getDay();
+  document.getElementById('panel-day').textContent=viewDay===td?'Today\'s tasks':key+'\'s tasks';
+
+  if(!list.length){
+    el.innerHTML='<div class="empty-state">No tasks yet — add one ✦</div>';
+  } else {
+    list.forEach((t,i)=>{
+      const d=document.createElement('div');
+      d.className='todo-item'+(t.done?' done':'');
+      d.innerHTML='<div class="todo-check"></div><div class="todo-text">'+escHtml(t.text)+'</div><button class="del-btn" title="Remove">✕</button>';
+      d.querySelector('.todo-check').addEventListener('click',function(){
+        todos[key][i].done=!todos[key][i].done;saveTodos();renderTodos();
+      });
+      d.querySelector('.del-btn').addEventListener('click',function(e){
+        e.stopPropagation();todos[key].splice(i,1);saveTodos();renderTodos();
+      });
+      el.appendChild(d);
+    });
+  }
+  const done=list.filter(t=>t.done).length;
+  const pct=list.length?Math.round(done/list.length*100):0;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent=done+' / '+list.length+' complete';
+}
+function saveTodos(){localStorage.setItem('wp_todos2',JSON.stringify(todos))}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// add task
+document.getElementById('add-task-btn').addEventListener('click',function(){
+  const f=document.getElementById('add-form');
+  f.classList.toggle('show');
+  if(f.classList.contains('show'))document.getElementById('task-input').focus();
+});
+document.getElementById('save-task').addEventListener('click',function(){
+  const v=document.getElementById('task-input').value.trim();
+  if(!v)return;
+  const key=DAYS[viewDay];
+  if(!todos[key])todos[key]=[];
+  todos[key].push({text:v,done:false});
+  saveTodos();renderTodos();
+  document.getElementById('task-input').value='';
+  document.getElementById('add-form').classList.remove('show');
+});
+document.getElementById('cancel-task').addEventListener('click',function(){
+  document.getElementById('add-form').classList.remove('show');
+  document.getElementById('task-input').value='';
+});
+document.getElementById('task-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter')document.getElementById('save-task').click();
+  if(e.key==='Escape')document.getElementById('cancel-task').click();
+});
+
+// day nav
+document.getElementById('prev-day').addEventListener('click',function(){viewDay=(viewDay+6)%7;renderTodos()});
+document.getElementById('next-day').addEventListener('click',function(){viewDay=(viewDay+1)%7;renderTodos()});
+
+// ── quotes ──
+function renderQuote(){
+  document.getElementById('quote-text').textContent=quotes.text;
+  document.getElementById('quote-author').textContent=quotes.author;
+  document.getElementById('q-ta').value=quotes.text;
+  document.getElementById('q-aut').value=quotes.author;
+}
+document.getElementById('q-save-btn').addEventListener('click',function(){
+  quotes={
+    text:document.getElementById('q-ta').value.trim()||quotes.text,
+    author:document.getElementById('q-aut').value.trim()||quotes.author
+  };
+  localStorage.setItem('wp_quotes',JSON.stringify(quotes));
+  renderQuote();
+});
+
+// ── folders ──
+function renderFolders(){
+  folders.forEach(function(path,i){
+    const sub=document.getElementById('fs-'+i);
+    const input=document.getElementById('fpi-'+i);
+    if(path){
+      if(path.indexOf('data:')===0){
+        sub.innerHTML='';
+        const img=document.createElement('img');
+        img.src=path;img.style.width='100%';img.style.height='48px';img.style.objectFit='cover';img.style.borderRadius='6px';
+        sub.appendChild(img);
+      } else {
+        const parts=path.replace(/\\/g,'/').split('/');
+        sub.textContent='…/'+parts[parts.length-1];
+      }
+      sub.style.color='#4a7090';
+    } else {
+      // default text differs for placeholders
+      sub.textContent = (i===0)?'click to choose image':'click to choose GIF';
+      sub.style.color='';
+    }
+    if(input) input.value=path||'';
+  });
+}
+
+// open placeholder cards on click
+[0,1].forEach(function(i){
+  const card=document.getElementById('fc-'+i);
+  card.addEventListener('click',function(){
+    if(i===0){
+      document.getElementById('image-input-quick').click();
+      return;
+    }
+    if(i===1){
+      document.getElementById('gif-input-quick').click();
+      return;
+    }
+  });
+});
+
+window.saveFolder=function(i){
+  const v=document.getElementById('fpi-'+i).value.trim();
+  folders[i]=v;
+  localStorage.setItem('wp_folders',JSON.stringify(folders));
+  document.getElementById('fpw-'+i).classList.remove('show');
+  renderFolders();
+};
+window.closeFolder=function(i){
+  document.getElementById('fpw-'+i).classList.remove('show');
+};
+
+window.clearFolder=function(i){
+  folders[i]='';
+  localStorage.setItem('wp_folders',JSON.stringify(folders));
+  if(i===0){
+    localStorage.removeItem('wp_image');
+    renderImage();
+  }
+  renderFolders();
+};
+
+
+// ── starfield ──
+(function(){
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  const stars=Array.from({length:160},function(){
+    return{x:Math.random(),y:Math.random(),r:.2+Math.random()*1.4,a:Math.random(),da:.002+Math.random()*.005,dir:Math.random()>.5?1:-1};
+  });
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(function(s){
+      s.a+=s.da*s.dir;
+      if(s.a>1||s.a<.05)s.dir*=-1;
+      ctx.beginPath();ctx.arc(s.x*c.width,s.y*c.height,s.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(200,220,255,'+s.a+')';ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── image holder ──
+const imageHolder=document.getElementById('image-holder');
+const imageInput=document.getElementById('image-input');
+const changeImgBtn=document.getElementById('change-img-btn');
+const removeImgBtn=document.getElementById('remove-img-btn');
+
+function saveImage(dataUrl){
+  localStorage.setItem('wp_image',dataUrl);
+  renderImage();
+}
+
+function renderImage(){
+  const savedImage=localStorage.getItem('wp_image');
+  const placeholder=imageHolder.querySelector('.image-placeholder');
+  
+  imageHolder.querySelectorAll('img').forEach(img=>img.remove());
+  
+  if(savedImage){
+    const img=document.createElement('img');
+    img.src=savedImage;
+    imageHolder.appendChild(img);
+    if(placeholder)placeholder.style.display='none';
+  } else {
+    if(placeholder)placeholder.style.display='flex';
+  }
+}
+
+imageHolder.addEventListener('click',function(){
+  imageInput.value='';
+  imageInput.click();
+});
+
+changeImgBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  imageInput.value='';
+  imageInput.click();
+});
+
+removeImgBtn.addEventListener('click',function(e){
+  e.stopPropagation();
+  localStorage.removeItem('wp_image');
+  renderImage();
+});
+
+imageInput.addEventListener('change',function(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  
+  const reader=new FileReader();
+  reader.onload=function(event){
+    saveImage(event.target.result);
+    // reset so selecting same file again still fires change
+    imageInput.value='';
+  };
+  reader.readAsDataURL(file);
+});
+
+// quick pickers for the folder placeholders
+const imageQuick=document.getElementById('image-input-quick');
+const gifQuick=document.getElementById('gif-input-quick');
+
+imageQuick.addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    folders[0]=ev.target.result;
+    // also update main image
+    saveImage(ev.target.result);
+    localStorage.setItem('wp_folders',JSON.stringify(folders));
+    renderFolders();
+    imageQuick.value='';
+  };
+  reader.readAsDataURL(file);
+});
+
+gifQuick.addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    folders[1]=ev.target.result;
+    localStorage.setItem('wp_folders',JSON.stringify(folders));
+    renderFolders();
+    gifQuick.value='';
+  };
+  reader.readAsDataURL(file);
+});
+
+// drag and drop
+imageHolder.addEventListener('dragover',function(e){
+  e.preventDefault();
+  imageHolder.classList.add('dragover');
+});
+
+imageHolder.addEventListener('dragleave',function(){
+  imageHolder.classList.remove('dragover');
+});
+
+imageHolder.addEventListener('drop',function(e){
+  e.preventDefault();
+  imageHolder.classList.remove('dragover');
+  
+  const files=e.dataTransfer.files;
+  if(files.length>0){
+    const file=files[0];
+    if(file.type.startsWith('image/')){
+      const reader=new FileReader();
+      reader.onload=function(event){
+        saveImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+});
+
+// ── init ──
+updateClock();setInterval(updateClock,1000);
+renderTodos();
+renderQuote();
+renderFolders();
+renderImage();
+</script>
+</body>
+</html>
